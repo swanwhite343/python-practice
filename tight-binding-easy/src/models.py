@@ -2,7 +2,7 @@ import numpy as np
 from pydantic import BaseModel
 from typing import Any
 from numpy.typing import NDArray
-from .utils import stable_hash_from_dict
+from .utils import stable_hash_from_dict, DEFAULT_HASH_LENGTH
 from .types import LatticeSide, Seed, HashLength, HoppingAmp, OnsiteChem
 
 class PhysicsConfig(BaseModel):
@@ -13,7 +13,7 @@ class PhysicsConfig(BaseModel):
     mu:  OnsiteChem
     seed: Seed
     
-    def get_hash(self, length: HashLength) -> str:
+    def get_hash(self, length: HashLength = DEFAULT_HASH_LENGTH) -> str:
         data = self.model_dump(mode="json")
         return stable_hash_from_dict(data, length=length)
     
@@ -21,7 +21,7 @@ class TightBindingSystem:
     def __init__(self, config: PhysicsConfig):
         self.config: PhysicsConfig = config
     
-    def solve(self) -> NDArray[np.float64]:
+    def solve(self) -> NDArray[np.float64]:  #ToDo: implement this correctly
         rng = np.random.default_rng(self.config.seed)
         return rng.normal(size=self.config.nx*self.config.ny)
 
