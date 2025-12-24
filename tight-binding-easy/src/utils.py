@@ -3,7 +3,6 @@ import json
 from typing import Any, Mapping, Final
 
 # Contants
-
 DEFAULT_HASH_LENGTH: Final[int] = 12
 
 # Functions
