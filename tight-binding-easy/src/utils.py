@@ -1,6 +1,8 @@
 import hashlib
 import json
+import yaml
 from typing import Any, Mapping, Final
+from pathlib import Path
 
 # Contants
 DEFAULT_HASH_LENGTH: Final[int] = 12
@@ -39,6 +41,19 @@ def stable_hash_from_dict(
         print("===================================")
               
     return digest_short_hex
+
+# Load from yaml, and output it as dict
+def load_raw(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as file:
+        return yaml.safe_load(file)
+    
+# Check whether a simulation is already done
+def should_skip_existing(path: Path, label: str | None = None) -> bool:
+    label = label or path.stem
+    if path.exists():
+        print(f"Skipping: {label} already exists at {path}")
+        return True
+    return False
 
 # Main
 
