@@ -22,5 +22,11 @@ def git_describe() -> str | None:
         ).strip()
     except Exception:
         return None
-
-        
+    
+def ensure_git_clean(allow_dirty: bool) -> None:
+    # Let the simulation run when either git is clean or --allow_dirty == True
+    dirty, reason = repo_state()
+    if dirty is None and not allow_dirty:
+        raise SystemExit(f"Cannot determine git status ({reason}). Use --allow-dirty to proceed.")
+    if dirty and not allow_dirty:
+        raise SystemExit("Repo has uncommitted changes. Commit/stash or rerun with --allow-dirty.")
