@@ -1,53 +1,63 @@
 from __future__ import annotations
 
-import argparse
 import logging
 import yaml
 import pandas as pd
-from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 from ..utils.core import load_raw
-from ..simulation.metadata import collect_metadata, save_metadata, load_metadata
-from ..paths import CONFIGS_DIR, RESULTS_DIR
-
+from ..geometry.types import FreezableGeometryLike, Bond
 from .configs import SimulationConfig
+from .paths import RunLayout
+from .metadata import collect_metadata, save_metadata, load_metadata
+from .cli import SimArgs
+from .metadata import save_git_diff
 
 log = logging.getLogger(__name__)
 
 
 @dataclass
 class Simulation:
-    args: argparse.Namespace
+    args: SimArgs
+    layout: RunLayout
 
     started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     t0: float = field(default_factory=perf_counter)
 
-    raw: dict = field(init=False)
+    raw: dict[str, Any] = field(init=False)
     cfg: SimulationConfig = field(init=False)
 
+    geo: FreezableGeometryLike = field(init=False)
     run_dir: Path = field(init=False)
-    meta: dict = field(init=False)
+
     meta_path: Path = field(init=False)
-    existing_meta: dict = field(init=False)
+    meta: dict[str, Any] = field(init=False)
+    existing_meta: dict[str, Any] = field(init=False)
 
-    def __post_init__(self):
-        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    def __post_init__(self) -> None:
+        self.layout.ensure_base_dirs()
 
-        self.raw = load_raw(CONFIGS_DIR / self.args.config_file)
+        # load config
+        cfg_path = self.layout.configs_dir / self.args.config_file
+        self.raw = load_raw(cfg_path)
 
-        # Validate + cross-check in one go
+        # validate + cross-check
         self.cfg = SimulationConfig.model_validate(self.raw)
 
-        geo = self.cfg.geo_hash()
-        phys = self.cfg.phys_hash()
-        solv = self.cfg.solver_hash()
+        # build objects
+        self.geo = self.cfg.build_geometry()
+        phys = self.cfg.physics
+        solv = self.cfg.solver
 
-        self.run_dir = RESULTS_DIR / f"geo_{geo}" / f"phys_{phys}" / f"solv_{solv}"
+        # decide run_dir by hashes
+        self.run_dir = self.layout.run_dir(self.geo, phys, solv)
         self.run_dir.mkdir(parents=True, exist_ok=True)
 
+        # metadata
         self.meta_path = self.run_dir / "metadata.yaml"
         self.meta = collect_metadata()
         self.existing_meta = load_metadata(self.meta_path)
@@ -56,9 +66,9 @@ class Simulation:
         return self.run_dir / f"{name}.{suffix}"
 
     def save_series(self, name: str, values) -> None:
-        path = self.artifact_path(name)
+        path = self.artifact_path(name, "csv")
         pd.Series(values).to_csv(path, index=False)
-        log.info(f"Finished: wrote {name} to {path}")
+        log.info(f"Wrote {name} -> {path}")
 
     def should_skip(self, name: str, suffix: str = "csv") -> bool:
         path = self.artifact_path(name, suffix)
@@ -75,7 +85,6 @@ class Simulation:
                 f"Existing results are from {stored}; you’re on {curr}. "
                 "Use --force_rerun to overwrite."
             )
-            log.error(msg)
             raise SystemExit(msg)
 
     def save_metadata(self) -> None:
@@ -83,17 +92,18 @@ class Simulation:
             "started_at": self.started_at.isoformat(),
             "duration_sec": perf_counter() - self.t0,
             "args": vars(self.args),
-            "allow_dirty": self.args.allow_dirty,
-            "force_rerun": self.args.force_rerun,
-            "phys_hash": self.cfg.phys_hash(),
-            "geo_hash": self.cfg.geo_hash(),
-            "solver_hash": self.cfg.solver_hash(),
             "run_dir": str(self.run_dir),
+            "geo_hash": self.geo.get_hash() if hasattr(self.geo, "get_hash") else None,
+            "phys_hash": self.cfg.physics.get_hash(),
+            "solver_hash": self.cfg.solver.get_hash(),
         }
         save_metadata(self.meta_path, self.meta)
-        log.info(f"Finished: wrote metadata to {self.meta_path}")
+
+        # --- add here: save git diff if dirty ---
+        if self.meta.get("git_dirty", False):
+            save_git_diff(self.run_dir)
 
     def save_config(self) -> None:
-        config_path = self.run_dir / "config.yaml"
-        config_path.write_text(yaml.safe_dump(self.raw), encoding="utf-8")
-        log.info(f"Finished: wrote base config to {config_path}")
+        (self.run_dir / "config.yaml").write_text(
+            yaml.safe_dump(self.raw), encoding="utf-8"
+        )

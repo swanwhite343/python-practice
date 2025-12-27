@@ -1,0 +1,14 @@
+numpy>=2.3
+pydantic>=2.12
+pyyaml>=6.0
+pandas>=2.3
+scipy>=1.15
+numba>=0.63
+
+[dev]
+pytest>=7
+ruff>=0.1
+mypy>=1.7
+ipython>=8
+ipykernel>=6
+matplotlib>=3.8

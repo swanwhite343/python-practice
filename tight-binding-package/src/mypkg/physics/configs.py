@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ..linalg import PairMatrix
+from ..linalg.core import PairMatrix
 from ..utils.core import stable_hash_from_dict, DEFAULT_HASH_LENGTH
 from ..types.scalars import Seed
 from .types import BasisAxis
@@ -36,10 +36,10 @@ class TBParams(BaseModel):
 
     @model_validator(mode="after")
     def _check_minimum(self):
-        if "nn1" not in self.hopping:
-            raise ValueError("hopping must contain 'nn1' at minimum.")
+        if not self.hopping:
+            raise ValueError("hopping must be non-empty.")
         return self
-
+    
     @model_validator(mode="after")
     def _normalize_hopping(self):
         # When nn1 exists, use it as default vals of nn1x and nn1y.

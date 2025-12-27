@@ -25,12 +25,12 @@ physics:
       nn2:
         - [ [1.0, 0.0] ] # (0,0)
     #soc:
-  fields:
-    ab_flux:
-      phi_over_phi_0: 0.
-    zeeman:
-      B: [0., 0., 0.]
-      convention: "half"
+  # fields:
+  #   ab_flux:
+  #     phi_over_phi_0: 0.
+  #   zeeman:
+  #     B: [0., 0., 0.]
+  #     convention: "half"
 
 perturbations:
 

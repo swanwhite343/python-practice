@@ -22,7 +22,7 @@ class ChainGeometry(GeometryLike):
     def iter_bonds(self, kind: str) -> Iterator[tuple[ActiveIndex, ActiveIndex]]:
         raise NotImplementedError
 
-    def get_geometry_hash(self, length: int = DEFAULT_HASH_LENGTH) -> str:
+    def get_hash(self, length: int = DEFAULT_HASH_LENGTH) -> str:
         state = {
             "config": self.config.model_dump(mode="json"),
             "removed_sites": [list(x) for x in sorted(self.removed_sites)],

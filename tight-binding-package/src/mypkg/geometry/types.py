@@ -8,6 +8,15 @@ GlobalIndex = NewType("GlobalIndex", int)
 ActiveIndex = NewType("ActiveIndex", int)
 Bond = tuple[ActiveIndex, ActiveIndex]
 
+class FreezableGeometryLike(Protocol):
+    provided_bond_keys: Collection[str]
+    n_global: int
+    @property
+    def n_active(self) -> int: ...
+    def iter_bonds(self, kind: str): ...
+    def get_hash(self, length: int = ...) -> str: ...
+    def freeze(self) -> None: ...
+    
 class GeometryLike(Protocol):
     provided_bond_keys: Collection[str]
     n_global: int

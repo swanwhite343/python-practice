@@ -13,7 +13,8 @@ if TYPE_CHECKING:
     from .chain import ChainGeometry
     from .ab_ring import ABRingGeometry
     from .honeycomb import HoneycombGeometry
-    
+
+
 class GeometryConfigBase(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -74,7 +75,7 @@ class HoneycombGeometryConfig(GeometryConfigBase):
     @property
     def dim(self) -> int: return 2
 
-    def build(self, *, removed_sites: set[tuple[int, int, int]] | None = None) -> HoneyCombGeometry:
+    def build(self, *, removed_sites: set[tuple[int, int, int]] | None = None) -> HoneycombGeometry:
         from .honeycomb import HoneycombGeometry
         return HoneycombGeometry(self, removed_sites=removed_sites)
 

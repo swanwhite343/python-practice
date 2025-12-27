@@ -9,7 +9,7 @@ import importlib.metadata as md
 from importlib.metadata import PackageNotFoundError
 from typing import Any
 
-from ..utils.git import git_commit, git_describe, repo_state
+from .git import git_commit, git_describe, repo_state
 
 
 def _pkg_version(name: str) -> str:
@@ -52,3 +52,30 @@ def current_commit() -> str | None:
         return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     except Exception:
         return None
+
+import subprocess
+from pathlib import Path
+
+def git_diff_text() -> str | None:
+    """Return `git diff` output, or None if git is unavailable."""
+    try:
+        return subprocess.check_output(["git", "diff"], text=True)
+    except Exception:
+        return None
+
+def git_diff_cached_text() -> str | None:
+    """Return staged diff (`git diff --cached`)."""
+    try:
+        return subprocess.check_output(["git", "diff", "--cached"], text=True)
+    except Exception:
+        return None
+
+def save_git_diff(run_dir: Path) -> None:
+    """Save working tree and staged diffs into run_dir."""
+    wd = git_diff_text()
+    if wd:
+        (run_dir / "git_diff.patch").write_text(wd, encoding="utf-8")
+
+    st = git_diff_cached_text()
+    if st:
+        (run_dir / "git_diff_cached.patch").write_text(st, encoding="utf-8")

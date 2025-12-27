@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from collections.abc import Iterator
 
 from ..utils.core import stable_hash_from_dict, DEFAULT_HASH_LENGTH
-from .types import GlobalIndex, ActiveIndex, BoundaryCondition, GeometryLike
+from .types import GlobalIndex, ActiveIndex, BoundaryCondition, GeometryLike, Bond
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ class SquareGeometry(GeometryLike):
     def _invalidate_maps(self) -> None:
         self._maps_dirty = True
 
-    def get_geometry_hash(self, length: int = DEFAULT_HASH_LENGTH) -> str:
+    def get_hash(self, length: int = DEFAULT_HASH_LENGTH) -> str:
         geometry_state = {
             "config": self.config.model_dump(mode="json"),
             "removed_sites": [list(xy) for xy in sorted(self.removed_sites)],
@@ -151,7 +151,7 @@ class SquareGeometry(GeometryLike):
             return None
         return self.global_to_active(j_global)
 
-    def iter_bonds(self, kind: str) -> Iterator[tuple[ActiveIndex, ActiveIndex]]:
+    def iter_bonds(self, kind: str) -> Iterator[Bond]:
         if kind == "nn1x":
             shifts = [(+1, 0)]
         elif kind == "nn1y":
@@ -168,6 +168,3 @@ class SquareGeometry(GeometryLike):
                 if j_act is None:
                     continue
                 yield i_act, j_act
-
-
-from .configs import SquareGeometryConfig 
