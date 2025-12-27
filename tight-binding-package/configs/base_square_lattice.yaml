@@ -1,0 +1,44 @@
+geometry:
+  lattice: square # {chain, square, honeycomb, ab_ring}
+  nx: 11
+  ny: 11
+  boundary_x: periodic
+  boundary_y: periodic
+
+defects:
+
+physics:
+  seed: 42
+  model: tb
+  basis:
+    n_orb: 1
+    n_spin: 1
+    order: [orb, spin]
+  params:
+    onsite:
+      - [ [1.0, 0.0] ]   # (0,0)
+    hopping: # multiple (-1) in Hamiltonian builder.
+      nn1x:
+        - [ [1.0, 0.0] ] # (0,0)
+      nn1y:
+        - [ [1.0, 0.0] ] # (0,0)
+      nn2:
+        - [ [1.0, 0.0] ] # (0,0)
+    #soc:
+  fields:
+    ab_flux:
+      phi_over_phi_0: 0.
+    zeeman:
+      B: [0., 0., 0.]
+      convention: "half"
+
+perturbations:
+
+solver:
+  eta: 0.01
+  w_min: -2.0
+  w_max:  2.0
+  n_w: 51
+  equilibrium:
+    temperature: 0.
+    mu: 0.

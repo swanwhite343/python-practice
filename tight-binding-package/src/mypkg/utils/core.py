@@ -4,6 +4,9 @@ import yaml
 from typing import Any, Mapping, Final
 from pathlib import Path
 
+import logging
+log = logging.getLogger(__name__)
+
 # Contants
 DEFAULT_HASH_LENGTH: Final[int] = 12
 
@@ -15,7 +18,7 @@ def stable_hash_from_dict(
     verbose: bool = False
 ) -> str:
     
-    if length <= 6 or length > 32:
+    if length < 6 or length > 32:
         raise ValueError("Hash length must be between 6 and 32.")
     
     payload = json.dumps(
@@ -45,21 +48,22 @@ def stable_hash_from_dict(
 # Load from yaml, and output it as dict
 def load_raw(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as file:
-        return yaml.safe_load(file)
+        config_data = yaml.safe_load(file)
+    
+    if config_data is None:
+        log.error("ValueError: Empty config")
+        raise ValueError("Empty config")
+    if not isinstance(config_data, dict):
+        msg = f"Config root must be a mapping (dict), got {type(config_data).__name__}"
+        log.error(msg)
+        raise ValueError(msg)
+    
+    return config_data
     
 # Check whether a simulation is already done
 def should_skip_existing(path: Path, label: str | None = None) -> bool:
     label = label or path.stem
     if path.exists():
-        print(f"Skipping: {label} already exists at {path}")
+        log.info(f"Skipping: {label} already exists at {path}")
         return True
     return False
-
-# Main
-
-def main() -> None:
-    test_dict: dict[str, int] = {"cat": 2, "dog": 3}
-    print(stable_hash_from_dict(test_dict, verbose=True))
-    
-if __name__ == "__main__":
-    main()
